@@ -45,6 +45,10 @@ switch ($action) {
             $insert = $pdo->prepare("INSERT INTO `raffle_winners` (`name`, `mobile`, `session_id`, `session_label`) VALUES (?, ?, ?, ?)");
             $insert->execute([$winner['name'], $winner['mobile'], $session['id'], $sessionLabel]);
 
+            // Remove winner from entries so they can't win twice in this session
+            $del = $pdo->prepare("DELETE FROM `raffle_entries` WHERE `id` = ?");
+            $del->execute([$winner['id']]);
+
             echo json_encode([
                 'success' => true,
                 'winner' => $winner,
