@@ -93,10 +93,49 @@ try {
                 count($aAnswers ?: [])
             ]);
 
+            // Add couple as one raffle entry: "PlayerA - PlayerB"
+            $coupleName = $session['player_a_name'] . ' - ' . $session['player_b_name'];
+            $coupleMobile = $session['player_a_mobile'] . ' / ' . $session['player_b_mobile'];
+            $raffleInsert = $pdo->prepare("INSERT INTO `raffle_entries` (`name`, `mobile`, `source`) VALUES (?, ?, 'couple')");
+            $raffleInsert->execute([$coupleName, $coupleMobile]);
+
             return true;
         }
         return false;
     }
+
+    // Raffle draw entries — session-based, gets truncated on reset session
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `raffle_entries` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `name` VARCHAR(200) NOT NULL,
+        `mobile` VARCHAR(50) DEFAULT NULL,
+        `source` VARCHAR(10) DEFAULT 'couple' COMMENT 'couple entry',
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    // Widen mobile column if it was created with old size
+    $pdo->exec("ALTER TABLE `raffle_entries` MODIFY `mobile` VARCHAR(50) DEFAULT NULL");
+
+    // Raffle sessions — tracks each raffle session start/end
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `raffle_sessions` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `ended_at` TIMESTAMP NULL DEFAULT NULL,
+        `status` VARCHAR(20) DEFAULT 'active' COMMENT 'active or ended'
+    )");
+
+    // Raffle winners — permanent record, never truncated
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `raffle_winners` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `name` VARCHAR(200) NOT NULL,
+        `mobile` VARCHAR(50) DEFAULT NULL,
+        `session_id` INT DEFAULT NULL,
+        `session_label` VARCHAR(100) DEFAULT NULL,
+        `won_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    // Add session_id column if missing (upgrade from old schema)
+    try { $pdo->exec("ALTER TABLE `raffle_winners` ADD COLUMN `session_id` INT DEFAULT NULL AFTER `mobile`"); } catch(PDOException $e) {}
+    // Widen mobile column if it was created with old size
+    $pdo->exec("ALTER TABLE `raffle_winners` MODIFY `mobile` VARCHAR(50) DEFAULT NULL");
 
 } catch (PDOException $e) {
     echo json_encode(['error' => $e->getMessage()]);
