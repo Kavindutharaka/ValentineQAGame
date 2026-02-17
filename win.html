@@ -13,7 +13,10 @@
             height: 100vh;
             min-height: 100vh;
             overflow: hidden;
-            background-color: #5d026b;
+            background-image: url(./bg.png);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
             font-family: 'Poppins', sans-serif;
             color: #ffffff;
             margin: 0;
@@ -418,7 +421,7 @@
                         <div class="wname">{{w.name}}</div>
                         <div class="wtime">{{formatTime(w.won_at)}}</div>
                     </div>
-                    <div class="wphone">{{maskPhone(w.mobile)}}</div>
+                    <div class="wphone">{{w.mobile}}</div>
                 </div>
             </div>
             <div class="no-winners" ng-show="sessionsList.length === 0">No winners drawn yet</div>
